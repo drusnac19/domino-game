@@ -1,0 +1,15 @@
+{
+    "name": "user/domino-game",
+    "description": "Domino game",
+    "autoload": {
+        "psr-4": {
+            "DominoGame\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Dumitru",
+            "email": "drusnac19@gmail.com"
+        }
+    ]
+}
