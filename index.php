@@ -4,30 +4,31 @@ require_once './vendor/autoload.php';
 
 use DominoGame\Log;
 use DominoGame\Gameplay;
+use DominoGame\Renderer;
 
 // The game requires CLI to run
-//(php_sapi_name() == 'cli') || die('The game requires CLI to run'); //#work#
+(php_sapi_name() == 'cli') || die('The game requires CLI to run'); //#work#
 
 try
 {
-//    echo Log::info('Welcome (ɔ◔‿◔)ɔ ') . PHP_EOL;
+    echo Log::info('Welcome (ɔ◔‿◔)ɔ ') . PHP_EOL;
 
-    $game = new Gameplay();
+    $render = new Renderer();
+    $game = new Gameplay($render);
 
     $totalPlayers = readline("Enter total players: ");
-    $game->initPlayers(2);
+    $totalPlayers = intval($totalPlayers) ? intval($totalPlayers) : 2;
+    $game->initPlayers($totalPlayers);
 
+    $game->start();
 
-//    $firstPlayer = $game->getFirstPlayer();
-    $player = $game->players[2];
-
-    echo $game . '<br>';
-
-    foreach (range(1, 10) as $i)
+    while ($game->isProgress())
     {
-        $game->pickupPlayerPieceFromTable($player);
-        echo $game . '<br>';
+        $game->update();
+        $game->render();
     }
+
+    $game->end();
 
 } catch (Error $e)
 {
@@ -35,6 +36,3 @@ try
 
     echo Log::danger($message);
 }
-
-//debug
-//echo '<pre>', print_r($game), '</pre>';

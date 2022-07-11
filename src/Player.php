@@ -3,21 +3,30 @@
 namespace DominoGame;
 
 use DominoGame\Piece;
+use DominoGame\Domino;
+use DominoGame\Table;
+use DominoGame\Board;
 
-class Player
+class Player extends Domino
 {
     protected int $id;
 
     protected $pieces;
 
-    public function __construct($id)
+    protected Table $table;
+
+    protected Board $board;
+
+    public function __construct($id, Table $table, Board $board)
     {
         $this->id = $id;
+        $this->table = $table;
+        $this->board = $board;
     }
 
     public function __toString(): string
     {
-        return "Player {$this->id} " . implode('', $this->pieces);
+        return $this->name() . ': '. implode('', $this->pieces);
     }
 
     public function getId()
@@ -25,52 +34,48 @@ class Player
         return $this->id;
     }
 
-    public function addPiece($piece): void
+    public function name(): string
     {
-        $this->pieces[] = $piece;
+        return "Player {$this->id}";
     }
 
-    public function getPieces(): array
+    public function movePieceToBoard()
     {
-        return $this->pieces;
-    }
-
-    public function getTotalScore(): int
-    {
-        return array_reduce($this->pieces, function ($piece)
+        foreach ($this->pieces as $key => $piece)
         {
-            return $piece->getScore();
+            $matchedPiece = $this->board->matchLeft($piece);
 
-        }, 0);
-    }
-
-    public function getMaxDoublePiece(): int
-    {
-        $double = 0;
-
-        foreach ($this->pieces as $piece)
-        {
-            if ($piece->isDouble() && $piece->getTop() > $double)
+            if ($matchedPiece instanceof Piece)
             {
-                $double = $piece->getTop();
+                $this->board->prependPiece($matchedPiece);
+
+                unset($this->pieces[$key]);
+
+                return $matchedPiece;
+            }
+
+            $matchedPiece = $this->board->matchRight($piece);
+
+            if ($matchedPiece instanceof Piece)
+            {
+                $this->board->appendPiece($matchedPiece);
+
+                unset($this->pieces[$key]);
+
+                return $matchedPiece;
             }
         }
 
-        return $double;
+        return false;
     }
 
-    public function getMaxScorePiece(): int
+    public function pickUpFromTable(): Piece
     {
-        $score = 0;
+        $piece = $this->table->getRandomPiece();
 
-        foreach ($this->pieces as $piece)
-        {
-            if ($piece->getScore() > $score)
-            {
-                $score = $piece->getScore();
-            }
-        }
+        $this->appendPiece($piece);
 
-        return $score;
+        return $piece;
     }
+
 }

@@ -2,9 +2,9 @@
 
 namespace DominoGame;
 
-/*
+/**
  * Comand line print theme
- * @source https://stackoverflow.com/questions/34034730/how-to-enable-color-for-php-cli#answer-69580828
+ * @link https://stackoverflow.com/questions/34034730/how-to-enable-color-for-php-cli#answer-69580828
  */
 
 class Log
@@ -27,7 +27,7 @@ class Log
 
     static function dark(string $text)
     {
-        return self::theme(['blue', 'lightgreybg'], $text);
+        return self::theme(['blue'], $text);
     }
 
     static function info(string $text)

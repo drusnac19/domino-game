@@ -24,6 +24,17 @@ class Piece
         return $this->top;
     }
 
+    public function swap()
+    {
+        $top = $this->getTop();
+        $bottom = $this->getBottom();
+
+        $this->top = $bottom;
+        $this->bottom = $top;
+
+        return $this;
+    }
+
     public function getBottom(): int
     {
         return $this->bottom;
@@ -38,10 +49,4 @@ class Piece
     {
         return $this->top === $this->bottom;
     }
-
-    public function equalTo(Piece $piece): bool
-    {
-        return $this->getScore() === $piece->getScore();
-    }
-
 }

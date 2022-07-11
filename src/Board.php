@@ -3,36 +3,45 @@
 namespace DominoGame;
 
 use DominoGame\Piece;
+use DominoGame\Domino;
 
-class Board
+class Board extends Domino
 {
-    protected array $pieces = [];
+    protected $pieces = [];
 
-    public function __toString(): string
+    public function matchLeft(Piece $piece)
     {
-        return implode('', $this->pieces);
-    }
+        $head = $this->pieces[0];
 
-    public function canMatch(Piece $piece)
-    {
-        if (count($this->pieces))
+        if ($piece->getTop() === $head->getTop())
         {
-            return true;
+            return $piece->swap();
         }
 
-        $head = $this->pieces[0];
-        $tail = $this->pieces[count($this->pieces) - 1];
+        if ($piece->getBottom() === $head->getTop())
+        {
+            return $piece;
+        }
 
-        return ($piece->equalTo($head) || $piece->equalTo($tail));
+        return false;
     }
 
-    public function prependPiece(Piece $piece): void
+    public function matchRight(Piece $piece)
     {
-        $this->pieces = array_merge([$piece], $this->pieces);
-    }
+        $total = count($this->pieces);
 
-    public function appendPiece(Piece $piece): void
-    {
-        $this->pieces[] = $piece;
+        $tail = $this->pieces[$total - 1];
+
+        if ($piece->getTop() === $tail->getBottom())
+        {
+            return $piece;
+        }
+
+        if ($piece->getBottom() === $tail->getBottom())
+        {
+            return $piece->swap();
+        }
+
+        return false;
     }
 }

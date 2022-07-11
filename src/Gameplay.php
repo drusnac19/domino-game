@@ -6,36 +6,136 @@ use DominoGame\Piece;
 use DominoGame\Player;
 use DominoGame\Table;
 use DominoGame\Board;
+use DominoGame\Renderer;
 
 class Gameplay
 {
     const MIN_PLAYERS = 2;
+
     const MAX_PLAYERS = 4;
+
     const MAX_PIECES_PLAYER = 7;
 
-    // stores the pocket pieces
-    public Table $table;
-    // stores the pocket pieces
-    public Board $board;
+    protected $players = [];
 
-    public $players = [];
+    protected Table $table;
 
-    public function __construct()
+    protected Board $board;
+
+    protected Renderer $renderer;
+
+    protected ?Player $player = null;
+
+    protected ?Player $winner = null;
+
+    protected bool $inProgress = true;
+
+    public function __construct(Renderer $renderer)
     {
         $this->table = new Table();
         $this->board = new Board();
+
+        $this->render = $renderer;
     }
 
-    public function __toString(): string
+    public function start(): void
     {
-        $separator = '<br>';
-        $players = implode($separator, $this->players);
-        $table = 'Table: ' . $this->table;
-        $board = 'Board: ' . $this->board;
 
-        return $players . $separator . $table . $separator . $board . $separator;
+        $this->player = $this->getFirstPlayer();
+
+        $piece = $this->player->getRandomPiece();
+        $this->board->appendPiece($piece);
+
+        $name = $this->player->name();
+        $double = $this->player->getMaxDoublePiece();
+        $this->render->printLine("{$name} started with double {$double} and put {$piece}");
+        $this->render();
     }
 
+    public function update(): void
+    {
+        $this->player = $this->nextPlayer($this->player);
+
+        $movedPiece = $this->player->movePieceToBoard();
+
+        if ($movedPiece instanceof \DominoGame\Piece)
+        {
+            $message = $this->player->name() . ' put ' . $movedPiece;
+        } else
+        {
+            if (!$this->table->hasPieces())
+            {
+                $this->inProgress = false;
+                return;
+            }
+
+            $pickedPiece = $this->player->pickUpFromTable();
+            $message = $this->player->name() . ' picked ' . $pickedPiece;
+        }
+
+        $this->render->printLine($message);
+
+        if (!$this->player->hasPieces())
+        {
+            $this->winner = $this->player;
+
+            $this->inProgress = false;
+            return;
+        }
+    }
+
+    public function end(): void
+    {
+        if (is_null($this->winner))
+        {
+            $this->winner = $this->getWinnerWithMinimScore();
+            echo 'The winner is with minim score: ' . $this->winner->name() . ' with score of ' . $this->winner->getTotalScore();
+        } else
+        {
+            echo 'The winner is: ' . $this->winner->name();
+        }
+    }
+
+    public function render(): void
+    {
+        $this->render->displayPlayers($this->players);
+        $this->render->printBlankLine();
+
+        $this->render->displayTable($this->table);
+        $this->render->printBlankLine();
+
+        $this->render->displayBoard($this->board);
+        $this->render->printBlankLine();
+    }
+
+    public function isProgress(): bool
+    {
+        return $this->inProgress && ($this->table->hasPieces() || $this->player->hasPieces());
+    }
+
+    /**
+     * Return an instance of the table
+     * @return \DominoGame\Table
+     */
+    public function getTable(): Table
+    {
+        return $this->table;
+    }
+
+    /**
+     * Return an instance of the board
+     * @return \DominoGame\Board
+     */
+    public function getBoard(): Board
+    {
+        return $this->board;
+    }
+
+    /**
+     * It's played by a minimum of 2 players and a max of 4
+     * @param int $totalPlayers
+     * @return void
+     */
     public function initPlayers(int $totalPlayers): void
     {
         if ($totalPlayers < self::MIN_PLAYERS || $totalPlayers > self::MAX_PLAYERS)
@@ -46,21 +146,34 @@ class Gameplay
         // create the players
         for ($i = 1; $i <= $totalPlayers; $i++)
         {
-            $player = new Player($i);
+            $player = new Player($i, $this->table, $this->board);
+
+            // 2 players get 7 pieces
+            // 3 players get 6 pieces
+            // 4 players get 5 pieces
+            $totalPieces = self::MAX_PIECES_PLAYER;
+            $totalPieces = $totalPlayers == 3 ? 6 : $totalPieces;
+            $totalPieces = $totalPlayers == 4 ? 5 : $totalPieces;
 
             // assign the default pieces to each player
-            for ($j = 0; $j < self::MAX_PIECES_PLAYER; $j++)
+            for ($j = 0; $j < $totalPieces; $j++)
             {
                 // get a random piece from the table
                 $piece = $this->table->getRandomPiece();
 
-                $player->addPiece($piece);
+                $player->appendPiece($piece);
             }
 
-            $this->players[$player->getId()] = $player;
+            $id = $player->getId();
+
+            $this->players[$id] = $player;
         }
     }
 
+    /**
+     * The player with the bigger double starts
+     * @return Player
+     */
     public function getFirstPlayer(): Player
     {
         $maxDouble = 0;
@@ -77,34 +190,70 @@ class Gameplay
             }
         }
 
+        // what if there is no double? let the player with the greatest score to start
+        if (is_null($newPlayer))
+        {
+            $maxScore = 0;
+
+            foreach ($this->players as $player)
+            {
+                $score = $player->getMaxScorePiece();
+
+                if ($score > $maxScore)
+                {
+                    $maxScore = $score;
+                    $newPlayer = $player;
+                }
+            }
+        }
+
         return $newPlayer;
     }
 
-    public function matchPlayerPieceInBoard($player): bool
+    /**
+     * This function will return the next player
+     * @param \DominoGame\Player $player
+     * @return \DominoGame\Player
+     */
+    public function nextPlayer(Player $player): Player
     {
-        foreach ($player->getPieces() as $piece)
-        {
-            if ($this->board->matchPiece($piece))
-            {
-                return true;
-            }
+        $totalKeys = count($this->players);
+        $keys = array_keys($this->players);
+        $nextId = $player->getId();
 
-            
+        foreach ($keys as $key => $id)
+        {
+            if ($player->getId() == $id)
+            {
+                $nextId = $keys[($key + 1) % $totalKeys];
+            }
         }
 
-        return false;
+        return $this->players[$nextId];
     }
 
-    public function putPlayerPieceInBoard($piece): void
+    /**
+     * If both players still have pieces in the end, the winner is the one with the least total dots.
+     * These are calculated by adding the dots from all the pieces in the player's hand.
+     * @return \DominoGame\Player
+     */
+    public function getWinnerWithMinimScore(): Player
     {
-        $this->board->prependPiece($piece);
-//        $this->board->appendPiece($piece);
+        $players = $this->players;
+        $minimPlayer = array_shift($players);
+        $minimScore = $minimPlayer->getTotalScore();
+
+        foreach ($players as $player)
+        {
+            $score = $player->getTotalScore();
+            if ($score < $minimScore)
+            {
+                $minimScore = $score;
+                $minimPlayer = $player;
+            }
+        }
+
+        return $minimPlayer;
     }
 
-    public function pickupPlayerPieceFromTable(Player $player): void
-    {
-        $piece = $this->table->getRandomPiece();
-
-        $player->addPiece($piece);
-    }
 }

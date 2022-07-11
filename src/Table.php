@@ -3,40 +3,37 @@
 namespace DominoGame;
 
 use DominoGame\Piece;
+use DominoGame\Domino;
 
-class Table
+class Table extends Domino
 {
-    const MAX_PIECES = 28;
-
-    protected array $pieces = [];
+    protected $pieces = [];
 
     public function __construct()
     {
-        $this->pieces = $this->generatePieces();
+        $this->pieces = $this->generate();
     }
 
-    public function __toString(): string
+    /**
+     * 28 domino pieces are laid upside down randomly.
+     * Each piece is divided in half and has two sets of dots in each half.
+     * Each set can have 0 to 6 dots.
+     * @return array
+     */
+    public function generate(): array
     {
-        return implode('', $this->pieces);
-    }
+        $pieces = [];
 
-    public function generatePieces(): array
-    {
-        return array_map(function ()
+        for ($i = 0; $i <= 6; $i++)
         {
-            return new Piece(rand(0, 6), rand(0, 6));
+            for ($j = $i; $j <= 6; $j++)
+            {
+                $pieces[] = new Piece($i, $j);
+            }
+        }
 
-        }, range(0, self::MAX_PIECES));
-    }
+        shuffle($pieces);
 
-    public function getRandomPiece(): Piece
-    {
-        $randomKey = array_rand($this->pieces);
-
-        $piece = $this->pieces[$randomKey];
-
-        unset($this->pieces[$randomKey]);
-
-        return $piece;
+        return $pieces;
     }
 }
