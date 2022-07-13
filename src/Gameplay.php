@@ -22,7 +22,7 @@ class Gameplay
 
     protected Board $board;
 
-    protected Renderer $renderer;
+    protected Renderer $render;
 
     protected ?Player $player = null;
 
