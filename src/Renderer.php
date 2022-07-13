@@ -11,7 +11,7 @@ class Renderer
 {
     public function displayPlayers(array $players): void
     {
-        echo Log::theme(['magenta'],implode(PHP_EOL, $players));
+        echo Log::theme(['magenta'], implode(PHP_EOL, $players));
     }
 
     public function displayBoard(Board $board): void
@@ -22,6 +22,11 @@ class Renderer
     public function displayTable(Table $table): void
     {
         echo Log::warning("Table: {$table}");
+    }
+
+    public function displayWinner(string $message): void
+    {
+        echo Log::success($message);
     }
 
     public function printLine(?string $title = ''): void

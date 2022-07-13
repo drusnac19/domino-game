@@ -40,7 +40,6 @@ class Gameplay
 
     public function start(): void
     {
-
         $this->player = $this->getFirstPlayer();
 
         $piece = $this->player->getRandomPiece();
@@ -66,6 +65,7 @@ class Gameplay
             if (!$this->table->hasPieces())
             {
                 $this->inProgress = false;
+
                 return;
             }
 
@@ -80,7 +80,6 @@ class Gameplay
             $this->winner = $this->player;
 
             $this->inProgress = false;
-            return;
         }
     }
 
@@ -89,11 +88,13 @@ class Gameplay
         if (is_null($this->winner))
         {
             $this->winner = $this->getWinnerWithMinimScore();
-            echo 'The winner is with minim score: ' . $this->winner->name() . ' with score of ' . $this->winner->getTotalScore();
+            $message = 'The winner is with minim score: ' . $this->winner->name() . ' with score of ' . $this->winner->getTotalScore();
         } else
         {
-            echo 'The winner is: ' . $this->winner->name();
+            $message = 'The winner is: ' . $this->winner->name();
         }
+
+        $this->render->displayWinner($message);
     }
 
     public function render(): void
@@ -138,9 +139,11 @@ class Gameplay
      */
     public function initPlayers(int $totalPlayers): void
     {
-        if ($totalPlayers < self::MIN_PLAYERS || $totalPlayers > self::MAX_PLAYERS)
+        $minPlayers = self::MIN_PLAYERS;
+        $maxPlayers = self::MAX_PLAYERS;
+        if ($totalPlayers < $minPlayers || $totalPlayers > $maxPlayers)
         {
-            throw new \Error("The game requires {self::MIN_PLAYERS} - {self::MAX_PLAYERS} players");
+            throw new \Error("The game requires {$minPlayers} - {$maxPlayers} players");
         }
 
         // create the players

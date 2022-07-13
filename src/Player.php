@@ -26,7 +26,10 @@ class Player extends Domino
 
     public function __toString(): string
     {
-        return $this->name() . ': '. implode('', $this->pieces);
+        $name = $this->name();
+        $pieces = implode('', $this->pieces);
+
+        return "{$name}: {$pieces}";
     }
 
     public function getId()

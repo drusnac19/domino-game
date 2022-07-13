@@ -17,7 +17,8 @@ try
     $game = new Gameplay($render);
 
     $totalPlayers = readline("Enter total players: ");
-    $totalPlayers = intval($totalPlayers) ? intval($totalPlayers) : 2;
+    $totalPlayers = intval($totalPlayers);
+    $totalPlayers = $totalPlayers ? $totalPlayers : 2;
     $game->initPlayers($totalPlayers);
 
     $game->start();
